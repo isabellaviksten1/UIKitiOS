@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "signupButtonTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signup!"
+          }
+        }
+      }
+    },
     "signupWelcomeLabel" : {
       "extractionState" : "manual",
       "localizations" : {
