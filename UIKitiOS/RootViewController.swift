@@ -100,15 +100,37 @@ private extension RootViewController {
         print("Tapped!")
     }
     
+    func isEmailValid(_ email: String) -> Bool {
+        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        let isValid = emailPredicate.evaluate(with: email)
+        return isValid
+    }
+    
+    func isPasswordValid(_ password: String) -> Bool {
+        let validPassword = password.count >= 16
+        return validPassword
+    }
+    
+    func doesPasswordsMatch(_ confirmation: String) -> Bool {
+        let matchingPassword = passwordTextField.text == passwordConfirmationTextField.text
+        return matchingPassword
+    }
+    
+    var canEnterConfirmPassword: Bool {
+        return isPasswordValid(passwordTextField.text ?? "")
+    }
+    
     var canSignUp: Bool {
-        let isEmailValid = !(emailTextField.text?.isEmpty ?? false)
-        let isPasswordValid = !(passwordTextField.text?.isEmpty ?? false)
-        let doesPasswordMatch = passwordTextField.text == passwordConfirmationTextField.text
-        return isEmailValid && isPasswordValid && doesPasswordMatch
+        let validEmail = isEmailValid(emailTextField.text ?? "")
+        let validPassword = isPasswordValid(passwordTextField.text ?? "")
+        let matchingPassword = doesPasswordsMatch(passwordConfirmationTextField.text ?? "")
+        return validEmail && validPassword && matchingPassword
     }
     
     func configureSubviews() {
         button.isEnabled = canSignUp
+        passwordConfirmationTextField.isEnabled = canEnterConfirmPassword
     }
 }
 
