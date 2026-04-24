@@ -29,27 +29,40 @@ final class RootViewController: UIViewController {
         placeholderL10NKey: .signupEmailPlaceholder,
         keyboardType: .emailAddress,
         isSecureTextEntry: false,
-        onEditingChanged: { [weak self] emailText in self?.configureSubviews()}
+        onEditingDidBegin: { [weak self] field in self?.endEditedFields.remove(field); self?.configureSubviews() },
+        onEditingChanged: { [weak self] _ in self?.configureSubviews() },
+        onEndEditing: { [weak self] field, _ in self?.endEditedFields.insert(field); self?.configureSubviews() }
     )
-    
+
     private lazy var passwordTextField = UITextField.make(
         placeholderL10NKey: .signupPasswordPlaceholder,
-        onEditingChanged: { [weak self]
-            passwordText in self?.configureSubviews()
-        })
-    
+        onEditingDidBegin: { [weak self] field in self?.endEditedFields.remove(field); self?.configureSubviews() },
+        onEditingChanged: { [weak self] _ in self?.configureSubviews() },
+        onEndEditing: { [weak self] field, _ in self?.endEditedFields.insert(field); self?.configureSubviews() }
+    )
+
     private lazy var passwordConfirmationTextField = UITextField.make(
         placeholderL10NKey: .signupPasswordPlaceholder,
-        onEditingChanged: { [weak self]
-            passwordConfirmation in self?.configureSubviews()
-        })
+        onEditingDidBegin: { [weak self] field in self?.endEditedFields.remove(field); self?.configureSubviews() },
+        onEditingChanged: { [weak self] _ in self?.configureSubviews() },
+        onEndEditing: { [weak self] field, _ in self?.endEditedFields.insert(field); self?.configureSubviews() }
+    )
+
+    private lazy var emailErrorLabel = UILabel.makeErrorLabel()
+    private lazy var passwordErrorLabel = UILabel.makeErrorLabel()
+    private lazy var passwordConfirmationErrorLabel = UILabel.makeErrorLabel()
+
+    private var endEditedFields: Set<UITextField> = []
     
     private lazy var stackView: UIStackView = {
         let stackView = UIStackView(
             arrangedSubviews: [
                 label,
+                emailErrorLabel,
                 emailTextField,
+                passwordErrorLabel,
                 passwordTextField,
+                passwordConfirmationErrorLabel,
                 passwordConfirmationTextField,
                 button,
                 .spacer
@@ -74,10 +87,12 @@ final class RootViewController: UIViewController {
 extension RootViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .red
+        view.backgroundColor = .white
 
         scrollView.addSubview(stackView)
         view.addSubview(scrollView)
+
+        view.addGestureRecognizer(UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing)))
 
         NSLayoutConstraint.activate([
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -128,9 +143,39 @@ private extension RootViewController {
         return validEmail && validPassword && matchingPassword
     }
     
+    enum ValidationError: String {
+        case invalidEmail = "HC: Invalid email"
+        case invalidPassword = "Invalid password"
+        case passwordMismatch = "Passwords do not match"
+
+        var message: String { rawValue }
+    }
+
+    var validationErrors: [ValidationError] {
+        var errors: [ValidationError] = []
+        if !isEmailValid(emailTextField.text ?? "")       { errors.append(.invalidEmail) }
+        if !isPasswordValid(passwordTextField.text ?? "") { errors.append(.invalidPassword) }
+        if !doesPasswordsMatch(passwordConfirmationTextField.text ?? "") { errors.append(.passwordMismatch) }
+        return errors
+    }
+
     func configureSubviews() {
         button.isEnabled = canSignUp
         passwordConfirmationTextField.isEnabled = canEnterConfirmPassword
+
+        let errors = Set(validationErrors)
+
+        emailErrorLabel.text = ValidationError.invalidEmail.message
+        passwordErrorLabel.text = ValidationError.invalidPassword.message
+        passwordConfirmationErrorLabel.text = ValidationError.passwordMismatch.message
+
+        emailErrorLabel.isHidden = !endEditedFields.contains(emailTextField) || !errors.contains(.invalidEmail)
+        passwordErrorLabel.isHidden = !endEditedFields.contains(passwordTextField) || !errors.contains(.invalidPassword)
+        passwordConfirmationErrorLabel.isHidden = !endEditedFields.contains(passwordConfirmationTextField) || !errors.contains(.passwordMismatch)
+
+        for error in errors {
+            log.debug("\(error.message)")
+        }
     }
 }
 
@@ -139,7 +184,9 @@ extension UITextField {
         placeholderL10NKey: LocalizedStringResource,
         keyboardType: UIKeyboardType = .default,
         isSecureTextEntry: Bool = true,
+        onEditingDidBegin: @escaping (UITextField) -> Void,
         onEditingChanged: @escaping (String) -> Void,
+        onEndEditing: @escaping (UITextField, String) -> Void
     ) -> UITextField {
         let textField = UITextField()
         textField.keyboardType = keyboardType
@@ -147,8 +194,21 @@ extension UITextField {
         textField.autocorrectionType = .no
         textField.isSecureTextEntry = isSecureTextEntry
         textField.placeholder = String(localized: placeholderL10NKey)
+        textField.addAction(UIAction { _ in onEditingDidBegin(textField) }, for: .editingDidBegin)
         textField.addAction(UIAction { _ in onEditingChanged(textField.text ?? "") }, for: .editingChanged)
+        textField.addAction(UIAction { _ in onEndEditing(textField, textField.text ?? "") }, for: .editingDidEnd)
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
+    }
+}
+
+extension UILabel {
+    static func makeErrorLabel() -> UILabel {
+        let label = UILabel()
+        label.textColor = .systemRed
+        label.font = .preferredFont(forTextStyle: .caption1)
+        label.isHidden = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }
 }
