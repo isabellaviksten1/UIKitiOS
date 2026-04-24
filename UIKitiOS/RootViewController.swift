@@ -9,6 +9,7 @@ import UIKit
 
 // MARK: RootViewController
 final class RootViewController: UIViewController {
+  
     private lazy var label: UILabel = {
         let label = UILabel()
         label.text = String(localized: .signupWelcomeLabel)
@@ -111,59 +112,21 @@ extension RootViewController {
 
 // MARK: Private
 private extension RootViewController {
+    
     private func didTapSignupButton() {
         print("Tapped!")
     }
-    
-    func isEmailValid(_ email: String) -> Bool {
-        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}$"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        let isValid = emailPredicate.evaluate(with: email)
-        return isValid
-    }
-    
-    func isPasswordValid(_ password: String) -> Bool {
-        let validPassword = password.count >= 16
-        return validPassword
-    }
-    
-    func doesPasswordsMatch(_ confirmation: String) -> Bool {
-        let matchingPassword = passwordTextField.text == passwordConfirmationTextField.text
-        return matchingPassword
-    }
-    
-    var canEnterConfirmPassword: Bool {
-        return isPasswordValid(passwordTextField.text ?? "")
-    }
-    
-    var canSignUp: Bool {
-        let validEmail = isEmailValid(emailTextField.text ?? "")
-        let validPassword = isPasswordValid(passwordTextField.text ?? "")
-        let matchingPassword = doesPasswordsMatch(passwordConfirmationTextField.text ?? "")
-        return validEmail && validPassword && matchingPassword
-    }
-    
-    enum ValidationError: String {
-        case invalidEmail = "HC: Invalid email"
-        case invalidPassword = "Invalid password"
-        case passwordMismatch = "Passwords do not match"
-
-        var message: String { rawValue }
-    }
-
-    var validationErrors: [ValidationError] {
-        var errors: [ValidationError] = []
-        if !isEmailValid(emailTextField.text ?? "")       { errors.append(.invalidEmail) }
-        if !isPasswordValid(passwordTextField.text ?? "") { errors.append(.invalidPassword) }
-        if !doesPasswordsMatch(passwordConfirmationTextField.text ?? "") { errors.append(.passwordMismatch) }
-        return errors
-    }
 
     func configureSubviews() {
-        button.isEnabled = canSignUp
-        passwordConfirmationTextField.isEnabled = canEnterConfirmPassword
+        var validator = SignupValidator()
+        validator.email = emailTextField.text ?? ""
+        validator.password = passwordTextField.text ?? ""
+        validator.passwordConfirmation = passwordConfirmationTextField.text ?? ""
 
-        let errors = Set(validationErrors)
+        button.isEnabled = validator.canSignUp
+        passwordConfirmationTextField.isEnabled = validator.canEnterConfirmPassword
+
+        let errors = validator.errors
 
         emailErrorLabel.text = ValidationError.invalidEmail.message
         passwordErrorLabel.text = ValidationError.invalidPassword.message
@@ -176,39 +139,5 @@ private extension RootViewController {
         for error in errors {
             log.debug("\(error.message)")
         }
-    }
-}
-
-extension UITextField {
-    static func make(
-        placeholderL10NKey: LocalizedStringResource,
-        keyboardType: UIKeyboardType = .default,
-        isSecureTextEntry: Bool = true,
-        onEditingDidBegin: @escaping (UITextField) -> Void,
-        onEditingChanged: @escaping (String) -> Void,
-        onEndEditing: @escaping (UITextField, String) -> Void
-    ) -> UITextField {
-        let textField = UITextField()
-        textField.keyboardType = keyboardType
-        textField.autocapitalizationType = .none
-        textField.autocorrectionType = .no
-        textField.isSecureTextEntry = isSecureTextEntry
-        textField.placeholder = String(localized: placeholderL10NKey)
-        textField.addAction(UIAction { _ in onEditingDidBegin(textField) }, for: .editingDidBegin)
-        textField.addAction(UIAction { _ in onEditingChanged(textField.text ?? "") }, for: .editingChanged)
-        textField.addAction(UIAction { _ in onEndEditing(textField, textField.text ?? "") }, for: .editingDidEnd)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }
-}
-
-extension UILabel {
-    static func makeErrorLabel() -> UILabel {
-        let label = UILabel()
-        label.textColor = .systemRed
-        label.font = .preferredFont(forTextStyle: .caption1)
-        label.isHidden = true
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
     }
 }
