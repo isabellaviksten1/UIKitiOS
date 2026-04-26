@@ -7,7 +7,8 @@
 
 import Foundation
 
-struct Email {
+struct Email: CustomStringConvertible {
+    var description: String { value }
     let value: String
     init(_ string: String) throws {
         let regex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}$"
