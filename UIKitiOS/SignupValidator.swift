@@ -5,12 +5,18 @@
 //  Created by Isabella Viksten on 2026-04-24.
 //
 
-enum ValidationError: String, Error {
-    case invalidEmail = "HC: Invalid email"
-    case invalidPassword = "HC: Invalid password, must be at least 8 characters"
-    case passwordMismatch = "HC: Passwords do not match"
+enum ValidationError: Error {
+    case invalidEmail
+    case invalidPassword
+    case passwordMismatch
 
-    var message: String { rawValue }
+    var message: String {
+        switch self {
+        case .invalidEmail:    return String(localized: .validationErrorInvalidEmail)
+        case .invalidPassword: return String(localized: .validationErrorInvalidPassword)
+        case .passwordMismatch: return String(localized: .validationErrorPasswordMismatch)
+        }
+    }
 }
 
 struct SignupValidationOutcome {

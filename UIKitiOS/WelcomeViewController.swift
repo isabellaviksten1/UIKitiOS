@@ -22,7 +22,7 @@ final class WelcomeViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         let label = UILabel()
-        label.text = "Welcome \(email)"
+        label.text = "\(String(localized: "welcomeLabel")) \(email)"
         label.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(label)
 
