@@ -118,15 +118,17 @@ private extension RootViewController {
     }
 
     func configureSubviews() {
-        var validator = SignupValidator()
-        validator.email = emailTextField.text ?? ""
-        validator.password = passwordTextField.text ?? ""
-        validator.passwordConfirmation = passwordConfirmationTextField.text ?? ""
+        let validator = SignupValidator()
+        let outcome = validator.validate(
+            email: emailTextField.text ?? "",
+            password: passwordTextField.text ?? "",
+            passwordConfirmation: passwordConfirmationTextField.text ?? ""
+        )
 
-        button.isEnabled = validator.canSignUp
-        passwordConfirmationTextField.isEnabled = validator.canEnterConfirmPassword
+        button.isEnabled = outcome.canSignUp
+        passwordConfirmationTextField.isEnabled = outcome.canEnterConfirmPassword
 
-        let errors = validator.errors
+        let errors = outcome.errors
 
         emailErrorLabel.text = ValidationError.invalidEmail.message
         passwordErrorLabel.text = ValidationError.invalidPassword.message

@@ -13,24 +13,21 @@ enum ValidationError: String, Error {
     var message: String { rawValue }
 }
 
+struct SignupValidationOutcome {
+    let errors: [ValidationError]
+
+    var canSignUp: Bool { errors.isEmpty }
+    var canEnterConfirmPassword: Bool { !errors.contains(.invalidPassword) }
+}
+
 struct SignupValidator {
-    var email: String = ""
-    var password: String = ""
-    var passwordConfirmation: String = ""
+    let minimumPasswordLength: Int = 8
 
-    var errors: [ValidationError] {
+    func validate(email: String, password: String, passwordConfirmation: String) -> SignupValidationOutcome {
         var errors: [ValidationError] = []
-        if (try? Email(email)) == nil                                    { errors.append(.invalidEmail) }
-        if (try? Password(password)) == nil                              { errors.append(.invalidPassword) }
-        if (try? MatchedPasswords(password, passwordConfirmation)) == nil { errors.append(.passwordMismatch) }
-        return errors
-    }
-
-    var canEnterConfirmPassword: Bool {
-        (try? Password(password)) != nil
-    }
-
-    var canSignUp: Bool {
-        errors.isEmpty
+        if (try? Email(email)) == nil                                              { errors.append(.invalidEmail) }
+        if (try? Password(password, minimum: minimumPasswordLength)) == nil        { errors.append(.invalidPassword) }
+        if (try? MatchedPasswords(password, passwordConfirmation)) == nil          { errors.append(.passwordMismatch) }
+        return SignupValidationOutcome(errors: errors)
     }
 }

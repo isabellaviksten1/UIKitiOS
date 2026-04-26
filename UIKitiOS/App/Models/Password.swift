@@ -7,9 +7,9 @@
 
 struct Password {
     let value: String
-    init(_ string: String) throws {
-        guard string.count >= 8 else {
-            throw ValidationError.invalidEmail
+    init(_ string: String, minimum: Int) throws {
+        guard string.count >= minimum else {
+            throw ValidationError.invalidPassword
         }
         self.value = string
     }
